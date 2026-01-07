@@ -1,0 +1,15 @@
+[submodule "frontend/web"]
+	path = frontend/web
+	url = git@github.com:Ordinis-Borealopelta/web.git
+[submodule "services/auth"]
+	path = services/auth
+	url = git@github.com:Ordinis-Borealopelta/auth.git
+[submodule "services/academic"]
+	path = services/academic
+	url = git@github.com:Ordinis-Borealopelta/academic.git
+[submodule "services/certification"]
+	path = services/certification
+	url = git@github.com:Ordinis-Borealopelta/certification.git
+[submodule "services/shared"]
+	path = services/shared
+	url = git@github.com:Ordinis-Borealopelta/shared.git
