@@ -3,13 +3,13 @@
 	url = git@github.com:Ordinis-Borealopelta/web.git
 [submodule "services/auth"]
 	path = services/auth
-	url = git@github.com:Ordinis-Borealopelta/auth.git
+	url = git@github.com:Ordinis-Borealopelta/auth-service.git
 [submodule "services/academic"]
 	path = services/academic
-	url = git@github.com:Ordinis-Borealopelta/academic.git
+	url = git@github.com:Ordinis-Borealopelta/academic-service.git
 [submodule "services/certification"]
 	path = services/certification
-	url = git@github.com:Ordinis-Borealopelta/certification.git
+	url = git@github.com:Ordinis-Borealopelta/certification-service.git
 [submodule "services/shared"]
 	path = services/shared
-	url = git@github.com:Ordinis-Borealopelta/shared.git
+	url = git@github.com:Ordinis-Borealopelta/shared-service.git
