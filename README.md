@@ -6,31 +6,22 @@ Monorepo microservice cho dự án nckh. Quản lý bởi Ordinis-Borealopelta.
 
 Dự án này tuân theo kiến trúc microservice sử dụng Git submodules. Mỗi service nằm trong repository riêng và có thể deploy độc lập, đồng thời được tích hợp tại đây để phát triển và điều phối local.
 
-```text
-                                     +----------------+
-                                     |  Frontend      |
-                                     |  (Next.js)     |
-                                     +-------+--------+
-                                             |
-                                             v
-                                     +-------+--------+
-                                     |  Gateway       |
-                                     |  (Port 3000)   |
-                                     +-------+--------+
-                                             |
-            +--------------------------------+--------------------------------+
-            |                                |                                |
-    +-------+--------+               +-------+--------+               +-------+--------+
-    |  Auth Service  |               |  Academic      |               |  Certification |
-    |  (Port 4000)   |               |  (Port 4001)   |               |  (Port 4002)   |
-    +-------+--------+               +-------+--------+               +-------+--------+
-            |                                |                                |
-            +--------------------------------+--------------------------------+
-                                             |
-                                     +-------+--------+
-                                     |   PostgreSQL   |
-                                     |  (Multi-schema)|
-                                     +----------------+
+```mermaid
+flowchart TB
+    Frontend["Frontend<br/>(Next.js)"]
+    Gateway["Gateway<br/>(Port 3000)"]
+    Auth["Auth Service<br/>(Port 4000)"]
+    Academic["Academic Service<br/>(Port 4001)"]
+    Certification["Certification Service<br/>(Port 4002)"]
+    DB[("PostgreSQL<br/>(Multi-schema)")]
+
+    Frontend --> Gateway
+    Gateway --> Auth
+    Gateway --> Academic
+    Gateway --> Certification
+    Auth --> DB
+    Academic --> DB
+    Certification --> DB
 ```
 
 ## Công nghệ sử dụng
