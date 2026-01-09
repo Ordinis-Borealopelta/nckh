@@ -24,10 +24,12 @@ Dự án này tuân theo kiến trúc microservice sử dụng Git submodules. M
     |  Auth Service  |               |  Academic      |               |  Certification |
     |  (Port 4000)   |               |  (Port 4001)   |               |  (Port 4002)   |
     +-------+--------+               +-------+--------+               +-------+--------+
+            |                                |                                |
+            +--------------------------------+--------------------------------+
                                              |
                                      +-------+--------+
-                                     |  Shared Utils  |
-                                     |  (Library)     |
+                                     |   PostgreSQL   |
+                                     |  (Multi-schema)|
                                      +----------------+
 ```
 
@@ -35,19 +37,44 @@ Dự án này tuân theo kiến trúc microservice sử dụng Git submodules. M
 
 - **Runtime**: Bun
 - **Framework**: Hono (Services), Next.js (Frontend)
+- **Database**: PostgreSQL với Drizzle ORM
+- **Authentication**: Better-Auth
 - **Linting/Formatting**: Biome
 - **Git Hooks**: Lefthook
 - **Ngôn ngữ**: TypeScript
 
 ## Các Services
 
-| Service | Thư mục | Port | Mô tả |
-|---------|---------|------|-------|
-| **Gateway** | `services/gateway` | 3000 | Điểm vào chính. Proxy `/api/auth/*` đến Auth service. |
-| **Auth** | `services/auth` | 4000 | Quản lý xác thực sử dụng better-auth với JWT. |
-| **Academic** | `services/academic` | 4001 | Quản lý hồ sơ học thuật (Placeholder). |
-| **Certification** | `services/certification` | 4002 | Xử lý chứng chỉ (Placeholder). |
-| **Frontend** | `frontend/web` | - | Ứng dụng web Next.js. |
+| Service | Thư mục | Port | Schema | Mô tả |
+|---------|---------|------|--------|-------|
+| **Gateway** | `services/gateway` | 3000 | - | Điểm vào chính. Proxy requests đến các services. |
+| **Auth** | `services/auth` | 4000 | `public` | Quản lý xác thực sử dụng Better-Auth với JWT. |
+| **Academic** | `services/academic` | 4001 | `academic` | Quản lý khóa học, lớp học, sinh viên, giảng viên. |
+| **Certification** | `services/certification` | 4002 | `certification` | Quản lý văn bằng, chứng chỉ, sổ gốc (Thông tư 21/2019). |
+| **Frontend** | `frontend/web` | - | - | Ứng dụng web Next.js. |
+
+## Database Schema
+
+### Auth Service (public schema)
+- `user`, `session`, `account`, `verification`, `jwks`
+- `organization`, `member`, `invitation`
+
+### Academic Service (academic schema)
+- `courses` - Chương trình đào tạo
+- `classes` - Lớp học phần
+- `enrollments` - Ghi danh học viên
+- `waitlist` - Danh sách chờ (tuyển sinh cuốn chiếu)
+- `lecturers` - Thông tin giảng viên
+- `students` - Thông tin học viên
+
+### Certification Service (certification schema)
+- `registry_book` - Sổ gốc cấp văn bằng
+- `certificate_types` - Loại chứng chỉ
+- `certificate_blanks` - Phôi bằng
+- `certificates` - Văn bằng đã cấp
+- `certificate_correction_log` - Nhật ký chỉnh sửa
+- `graduation_decisions` - Quyết định tốt nghiệp
+- `blank_inventory_log` - Nhật ký xuất nhập phôi
 
 ### Shared Utilities
 
@@ -63,6 +90,7 @@ bun add shared@git+ssh://git@github.com:Ordinis-Borealopelta/shared-service.git#
 
 - Đã cài đặt Bun runtime
 - Git được cấu hình với SSH access đến các repository của tổ chức
+- PostgreSQL database
 
 ### Cài đặt
 
@@ -78,6 +106,19 @@ bun add shared@git+ssh://git@github.com:Ordinis-Borealopelta/shared-service.git#
    cd services/<tên-service>
    bun install
    bunx lefthook install
+   ```
+
+3. Cấu hình database:
+
+   ```bash
+   cp .env.example .env
+   # Chỉnh sửa DATABASE_URL trong .env
+   ```
+
+4. Chạy migrations:
+
+   ```bash
+   bunx drizzle-kit migrate
    ```
 
 ### Chạy Local
@@ -100,6 +141,15 @@ Mỗi service hỗ trợ các scripts sau:
 | `bun run lint` | Chạy Biome linting |
 | `bun run format` | Format code với Biome |
 | `bun run format-and-lint` | Format và lint cùng lúc |
+
+## Database Commands
+
+| Command | Mô tả |
+|---------|-------|
+| `bunx drizzle-kit generate` | Tạo migration files |
+| `bunx drizzle-kit migrate` | Chạy migrations |
+| `bunx drizzle-kit push` | Push schema trực tiếp (dev only) |
+| `bunx drizzle-kit studio` | Mở Drizzle Studio GUI |
 
 ## Health Checks
 
