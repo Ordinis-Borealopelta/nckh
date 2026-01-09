@@ -13,3 +13,6 @@
 [submodule "services/shared"]
 	path = services/shared
 	url = git@github.com:Ordinis-Borealopelta/shared-service.git
+[submodule "services/gateway"]
+	path = services/gateway
+	url = git@github.com:Ordinis-Borealopelta/gateway-service.git
