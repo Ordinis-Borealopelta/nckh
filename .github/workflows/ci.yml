@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [gateway, auth, academic, certification]
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        working-directory: services/${{ matrix.service }}
+        run: bun install
+
+      - name: Lint
+        working-directory: services/${{ matrix.service }}
+        run: bun run lint
+
+      - name: Typecheck
+        working-directory: services/${{ matrix.service }}
+        run: bun run typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    strategy:
+      matrix:
+        service: [gateway, auth, academic, certification]
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+
+      - name: Install dependencies
+        working-directory: services/${{ matrix.service }}
+        run: bun install
+
+      - name: Run tests
+        working-directory: services/${{ matrix.service }}
+        env:
+          DOPPLER_TOKEN: ${{ secrets[format('DOPPLER_TOKEN_{0}', matrix.service)] }}
+        run: |
+          if [ -f "package.json" ] && grep -q '"test"' package.json; then
+            doppler run -- bun test
+          else
+            echo "No test script found, skipping"
+          fi
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      matrix:
+        service: [gateway, auth, academic, certification]
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/${{ matrix.service }}
+          push: false
+          tags: nckh-${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

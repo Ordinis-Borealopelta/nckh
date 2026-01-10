@@ -1,6 +1,6 @@
 # nckh
 
-Monorepo microservice cho dự án nckh. Quản lý bởi Ordinis-Borealopelta.
+Monorepo microservice cho dự án nckh.
 
 ## Kiến trúc
 
@@ -30,6 +30,7 @@ flowchart TB
 - **Framework**: Hono (Services), Next.js (Frontend)
 - **Database**: PostgreSQL với Drizzle ORM
 - **Authentication**: Better-Auth
+- **Secret Management**: Doppler
 - **Linting/Formatting**: Biome
 - **Git Hooks**: Lefthook
 - **Ngôn ngữ**: TypeScript
@@ -42,7 +43,7 @@ flowchart TB
 | **Auth** | `services/auth` | 4000 | `public` | Quản lý xác thực sử dụng Better-Auth với JWT. |
 | **Academic** | `services/academic` | 4001 | `academic` | Quản lý khóa học, lớp học, sinh viên, giảng viên. |
 | **Certification** | `services/certification` | 4002 | `certification` | Quản lý văn bằng, chứng chỉ, sổ gốc (Thông tư 21/2019). |
-| **Frontend** | `frontend/web` | - | - | Ứng dụng web Next.js. |
+| **Frontend** | `frontend/web` | 5000 | - | Ứng dụng web Next.js. |
 
 ## Database Schema
 
@@ -82,6 +83,7 @@ bun add shared@git+ssh://git@github.com:Ordinis-Borealopelta/shared-service.git#
 - Đã cài đặt Bun runtime
 - Git được cấu hình với SSH access đến các repository của tổ chức
 - PostgreSQL database
+- Doppler CLI (cho secret management)
 
 ### Cài đặt
 
@@ -99,22 +101,83 @@ bun add shared@git+ssh://git@github.com:Ordinis-Borealopelta/shared-service.git#
    bunx lefthook install
    ```
 
-3. Cấu hình database:
-
-   ```bash
-   cp .env.example .env
-   # Chỉnh sửa DATABASE_URL trong .env
-   ```
+3. Cấu hình Doppler (xem phần Doppler Setup bên dưới)
 
 4. Chạy migrations:
 
    ```bash
-   bunx drizzle-kit migrate
+   doppler run -- bunx drizzle-kit migrate
    ```
+
+## Doppler Setup
+
+Dự án sử dụng Doppler để quản lý secrets một cách an toàn và tập trung.
+
+### Cài đặt Doppler CLI
+
+**Linux/macOS:**
+
+```bash
+curl -Ls https://cli.doppler.com/install.sh | sh
+doppler login
+```
+
+**Windows (PowerShell):**
+
+```powershell
+# Option 1: Scoop
+scoop install doppler
+
+# Option 2: Winget
+winget install DopplerHQ.doppler
+
+# Then login
+doppler login
+```
+
+### Cấu hình Doppler cho từng service
+
+**Linux/macOS:**
+
+```bash
+./scripts/doppler-setup.sh
+```
+
+**Windows (PowerShell):**
+
+```powershell
+.\scripts\doppler-setup.ps1
+```
+
+Hoặc cấu hình thủ công:
+
+```bash
+cd services/<tên-service>
+doppler setup --project nckh-<tên-service> --config dev
+```
+
+### Chạy với Doppler
+
+```bash
+bun run dev:doppler
+```
+
+### Cấu trúc Doppler Project
+
+Dự án sử dụng một project Doppler duy nhất (`nckh`) chứa secrets cho các services:
+
+| Secret | Mô tả |
+|--------|-------|
+| `AUTH_DATABASE_URL` | Connection string PostgreSQL cho Auth (schema: public) |
+| `ACADEMIC_DATABASE_URL` | Connection string PostgreSQL cho Academic (schema: academic) |
+| `CERTIFICATION_DATABASE_URL` | Connection string PostgreSQL cho Certification (schema: certification) |
+| `BETTER_AUTH_SECRET` | Secret key cho Better-Auth |
+
+Các config khác (ports, URLs) được hardcode với giá trị mặc định trong code.
 
 ### Chạy Local
 
-Để khởi động service ở chế độ development:
+Để khởi động service ở chế độ development (yêu cầu Doppler):
 
 ```bash
 bun run dev
@@ -126,8 +189,8 @@ Mỗi service hỗ trợ các scripts sau:
 
 | Script | Mô tả |
 |--------|-------|
-| `bun run dev` | Khởi động service ở chế độ watch |
-| `bun run start` | Khởi động service ở chế độ production |
+| `bun run dev` | Khởi động development với Doppler |
+| `bun run start` | Khởi động production với Doppler |
 | `bun run typecheck` | Kiểm tra TypeScript types |
 | `bun run lint` | Chạy Biome linting |
 | `bun run format` | Format code với Biome |
@@ -157,4 +220,28 @@ Ví dụ response từ Gateway `/health`:
     "certification": { "status": "ok", "latency": 10 }
   }
 }
+```
+
+## Docker
+
+Chạy toàn bộ stack với Docker Compose:
+
+```bash
+docker-compose up -d
+```
+
+Yêu cầu thiết lập biến môi trường Doppler token:
+
+**Linux/macOS:**
+
+```bash
+export DOPPLER_TOKEN=dp.st.dev.xxx
+docker-compose up -d
+```
+
+**Windows (PowerShell):**
+
+```powershell
+$env:DOPPLER_TOKEN="dp.st.dev.xxx"
+docker-compose up -d
 ```

@@ -1,0 +1,68 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: nckh
+      POSTGRES_PASSWORD: nckh_dev_password
+      POSTGRES_DB: nckh
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nckh"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  gateway:
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - DOPPLER_TOKEN=${DOPPLER_TOKEN}
+    depends_on:
+      - auth
+      - academic
+      - certification
+
+  auth:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - DOPPLER_TOKEN=${DOPPLER_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  academic:
+    build:
+      context: ./services/academic
+      dockerfile: Dockerfile
+    ports:
+      - "4001:4001"
+    environment:
+      - DOPPLER_TOKEN=${DOPPLER_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  certification:
+    build:
+      context: ./services/certification
+      dockerfile: Dockerfile
+    ports:
+      - "4002:4002"
+    environment:
+      - DOPPLER_TOKEN=${DOPPLER_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
